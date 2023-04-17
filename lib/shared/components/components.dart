@@ -1,8 +1,9 @@
 
 
+import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:flutter/material.dart';
+import 'package:todo_app/shared/cubit/todo_cubit.dart';
 
-import '../cubit/cubit.dart';
 
 Widget defaultButton({
   double width = double.infinity,
@@ -43,7 +44,7 @@ Widget defaultFormField({
   required String label,
   required IconData prefix,
   IconData ?suffix,
-  required void Function()?suffixPressed,
+  void Function()? suffixPressed,
   bool isClickable = true,
 }) =>
     TextFormField(
@@ -114,7 +115,7 @@ Widget buildTaskItem(Map model, context) => Dismissible(
             IconButton(
               onPressed: ()
               {
-                AppCubit.get(context).updateData(
+                TodoCubit.get(context).updateData(
                   status: 'done',
                   id: model['id'],
                 );
@@ -126,7 +127,7 @@ Widget buildTaskItem(Map model, context) => Dismissible(
             ),
             IconButton(
               onPressed: () {
-                AppCubit.get(context).updateData(
+                TodoCubit.get(context).updateData(
                   status: 'archive',
                   id: model['id'],
                 );
@@ -141,7 +142,7 @@ Widget buildTaskItem(Map model, context) => Dismissible(
       ),
   onDismissed: (direction)
   {
-    AppCubit.get(context).deleteData(id: model['id'],);
+    TodoCubit.get(context).deleteData(id: model['id'],);
   },
 );
 

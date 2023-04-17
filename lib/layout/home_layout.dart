@@ -1,16 +1,15 @@
 
-
-// 1. create database
-// 2. create tables
-// 3. open database
-// 4. insert to database
-// 5. get from database
-// 6. update in database
-// 7. delete from database
-
+import 'package:conditional_builder_null_safety/conditional_builder_null_safety.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:todo_app/shared/cubit/todo_state.dart';
 
+import '../shared/components/components.dart';
+import '../shared/cubit/todo_cubit.dart';
+
+
+// ignore: must_be_immutable
 class HomeLayout extends StatelessWidget {
   var scaffoldKey = GlobalKey<ScaffoldState>();
   var formKey = GlobalKey<FormState>();
@@ -18,20 +17,22 @@ class HomeLayout extends StatelessWidget {
   var timeController = TextEditingController();
   var dateController = TextEditingController();
 
+  HomeLayout({super.key});
+
   @override
   Widget build(BuildContext context)
   {
     return BlocProvider(
-      create: (BuildContext context) => AppCubit()..createDatabase(),
-      child: BlocConsumer<AppCubit, AppStates>(
-        listener: (BuildContext context, AppStates state) {
+      create: (BuildContext context) => TodoCubit()..createDatabase(),
+      child: BlocConsumer<TodoCubit, TodoState>(
+        listener: (BuildContext context, state) {
           if(state is AppInsertDatabaseState)
           {
             Navigator.pop(context);
           }
         },
-        builder: (BuildContext context, AppStates state) {
-          AppCubit cubit = AppCubit.get(context);
+        builder: (BuildContext context, TodoState state) {
+          TodoCubit cubit = TodoCubit.get(context);
 
           return Scaffold(
             key: scaffoldKey,
@@ -43,13 +44,13 @@ class HomeLayout extends StatelessWidget {
             body: ConditionalBuilder(
               condition: state is! AppGetDatabaseLoadingState,
               builder: (context) => cubit.screens[cubit.currentIndex],
-              fallback: (context) => Center(child: CircularProgressIndicator()),
+              fallback: (context) => const Center(child: CircularProgressIndicator()),
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () {
                 if (cubit.isBottomSheetShown)
                 {
-                  if (formKey.currentState.validate())
+                  if (formKey.currentState!.validate())
                   {
                     cubit.insertToDatabase(
                       title: titleController.text,
@@ -60,10 +61,10 @@ class HomeLayout extends StatelessWidget {
                 } else
                 {
                   scaffoldKey.currentState
-                      .showBottomSheet(
+                      !.showBottomSheet(
                         (context) => Container(
                       color: Colors.white,
-                      padding: EdgeInsets.all(
+                      padding: const EdgeInsets.all(
                         20.0,
                       ),
                       child: Form(
@@ -74,8 +75,8 @@ class HomeLayout extends StatelessWidget {
                             defaultFormField(
                               controller: titleController,
                               type: TextInputType.text,
-                              validate: (String value) {
-                                if (value.isEmpty) {
+                              validate: (value) {
+                                if (value!.isEmpty) {
                                   return 'title must not be empty';
                                 }
 
@@ -83,8 +84,9 @@ class HomeLayout extends StatelessWidget {
                               },
                               label: 'Task Title',
                               prefix: Icons.title,
+                              suffixPressed: () {  },
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 15.0,
                             ),
                             defaultFormField(
@@ -96,12 +98,11 @@ class HomeLayout extends StatelessWidget {
                                   initialTime: TimeOfDay.now(),
                                 ).then((value) {
                                   timeController.text =
-                                      value.format(context).toString();
-                                  print(value.format(context));
+                                      value!.format(context).toString();
                                 });
                               },
-                              validate: (String value) {
-                                if (value.isEmpty) {
+                              validate: (value) {
+                                if (value!.isEmpty) {
                                   return 'time must not be empty';
                                 }
 
@@ -110,7 +111,7 @@ class HomeLayout extends StatelessWidget {
                               label: 'Task Time',
                               prefix: Icons.watch_later_outlined,
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 15.0,
                             ),
                             defaultFormField(
@@ -124,11 +125,11 @@ class HomeLayout extends StatelessWidget {
                                   lastDate: DateTime.parse('2021-05-03'),
                                 ).then((value) {
                                   dateController.text =
-                                      DateFormat.yMMMd().format(value);
+                                      DateFormat.yMMMd().format(value!);
                                 });
                               },
-                              validate: (String value) {
-                                if (value.isEmpty) {
+                              validate: ( value) {
+                                if (value!.isEmpty) {
                                   return 'date must not be empty';
                                 }
 
@@ -168,20 +169,20 @@ class HomeLayout extends StatelessWidget {
               onTap: (index) {
                 cubit.changeIndex(index);
               },
-              items: [
-                BottomNavigationBarItem(
+              items: const [
+                 BottomNavigationBarItem(
                   icon: Icon(
                     Icons.menu,
                   ),
                   label: 'Tasks',
                 ),
-                BottomNavigationBarItem(
+                 BottomNavigationBarItem(
                   icon: Icon(
                     Icons.check_circle_outline,
                   ),
                   label: 'Done',
                 ),
-                BottomNavigationBarItem(
+                 BottomNavigationBarItem(
                   icon: Icon(
                     Icons.archive_outlined,
                   ),

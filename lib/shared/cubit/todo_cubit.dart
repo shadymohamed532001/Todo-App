@@ -1,16 +1,17 @@
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:todo_app/shared/cubit/states.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:todo_app/shared/cubit/todo_state.dart';
 
 import '../../modules/archived_tasks/archived_tasks_screen.dart';
 import '../../modules/done_tasks/done_tasks_screen.dart';
 import '../../modules/new_tasks/new_tasks_screen.dart';
 
-class AppCubit extends Cubit<AppStates> {
-  AppCubit() : super(AppInitialState());
 
-  static AppCubit get(context) => BlocProvider.of(context);
+class TodoCubit extends Cubit<TodoState> {
+  TodoCubit() : super(AppInitialState());
+  static TodoCubit get(context) => BlocProvider.of(context);
+
 
   int currentIndex = 0;
 
@@ -30,11 +31,11 @@ class AppCubit extends Cubit<AppStates> {
     currentIndex = index;
     emit(AppChangeBottomNavBarState());
   }
-
-  Database database;
+  Database ? database;
   List<Map> newTasks = [];
   List<Map> doneTasks = [];
   List<Map> archivedTasks = [];
+
 
   void createDatabase() {
     openDatabase(
@@ -50,7 +51,7 @@ class AppCubit extends Cubit<AppStates> {
         print('database created');
         database
             .execute(
-                'CREATE TABLE tasks (id INTEGER PRIMARY KEY, title TEXT, date TEXT, time TEXT, status TEXT)')
+            'CREATE TABLE tasks (id INTEGER PRIMARY KEY, title TEXT, date TEXT, time TEXT, status TEXT)')
             .then((value) {
           print('table created');
         }).catchError((error) {
@@ -65,29 +66,6 @@ class AppCubit extends Cubit<AppStates> {
     ).then((value) {
       database = value;
       emit(AppCreateDatabaseState());
-    });
-  }
-
-  insertToDatabase({
-    @required String title,
-    @required String time,
-    @required String date,
-  }) async {
-    await database.transaction((txn) {
-      txn
-          .rawInsert(
-        'INSERT INTO tasks(title, date, time, status) VALUES("$title", "$date", "$time", "new")',
-      )
-          .then((value) {
-        print('$value inserted successfully');
-        emit(AppInsertDatabaseState());
-
-        getDataFromDatabase(database);
-      }).catchError((error) {
-        print('Error When Inserting New Record ${error.toString()}');
-      });
-
-      return null;
     });
   }
 
@@ -113,13 +91,12 @@ class AppCubit extends Cubit<AppStates> {
       emit(AppGetDatabaseState());
     });
   }
-
   void updateData({
-  @required String status,
-  @required int id,
-}) async
+    required String status,
+    required int id,
+  }) async
   {
-    database.rawUpdate(
+    database!.rawUpdate(
       'UPDATE tasks SET status = ? WHERE id = ?',
       ['$status', id],
     ).then((value)
@@ -130,10 +107,10 @@ class AppCubit extends Cubit<AppStates> {
   }
 
   void deleteData({
-    @required int id,
+    required int id,
   }) async
   {
-    database.rawDelete('DELETE FROM tasks WHERE id = ?', [id])
+    database!.rawDelete('DELETE FROM tasks WHERE id = ?', [id])
         .then((value)
     {
       getDataFromDatabase(database);
@@ -141,12 +118,30 @@ class AppCubit extends Cubit<AppStates> {
     });
   }
 
+  Future insertToDatabase({
+    required String title,
+    required String time,
+    required String date,
+  }) async {
+    await database!.transaction((txn) async {
+      txn.rawInsert('INSERT INTO tasks(title, date, time, status) VALUES("$title", "$date", "$time", "new")',).then((value) {
+        print('$value inserted successfully');
+        emit(AppInsertDatabaseState());
+
+        getDataFromDatabase(database);
+      }).catchError((error) {
+        print('Error When Inserting New Record ${error.toString()}');
+      });
+    });
+  }
+
+
   bool isBottomSheetShown = false;
   IconData fabIcon = Icons.edit;
 
   void changeBottomSheetState({
-    @required bool isShow,
-    @required IconData icon,
+    required bool isShow,
+    required IconData icon,
   }) {
     isBottomSheetShown = isShow;
     fabIcon = icon;
